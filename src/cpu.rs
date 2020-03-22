@@ -3,6 +3,7 @@ use super::interconnect;
 const NUM_GPR: usize = 32; // number of general purpose registers
 
 // a NEC VR-4300 MIPS CPU
+#[derive(Debug)]
 pub struct Cpu
 {
     // cpu registers (see datasheet: 1.4.2)
@@ -47,15 +48,38 @@ impl Cpu
         self.reg_pc = 0xffff_ffff_bfc0_0000; // TODO move to const later
     }
 
-    // TODO different interface
     pub fn run(&mut self)
     {
         loop
         {
-            // TODO
-            let opcode = self.read_word(self.reg_pc);
-            panic!("Opcode: {:#x}", opcode);
+            self.run_instruction();
         }
+    }
+
+    pub fn run_instruction(&mut self)
+    {
+        let instruction = self.read_word(self.reg_pc);
+
+        let opcode = (instruction >> 26) & 0b111111;
+        match opcode
+        {
+            0b001111 =>
+            {
+                // LUI
+                println!("We got LUI!");
+                let imm = instruction & 0xffff;
+                let rt = (instruction >> 16) & 0x11111; // index
+                // TODO check if in 32 or 64b mode for sign extension
+                // NOTE 32b mode is assumed below
+                self.write_reg_gpr(rt as usize, (imm << 16) as u64);
+            }
+            _ =>
+            {
+                panic!("Unrecognized opword: {:#x}", instruction)
+            }
+        }
+
+        self.reg_pc += 4;
     }
 
     // take an address (64b) and return a word (32b)
@@ -81,11 +105,21 @@ impl Cpu
             panic!("Unrecognized virtual address: {:#x}", virt_addr);
         }
     }
+
+    fn write_reg_gpr(&mut self, index: usize, value: u64)
+    {
+        // b/c first register is always zero
+        if (index != 0)
+        {
+            self.reg_gpr[index] = value;
+        }
+    }
 }
 
 // The 'EP' area of the config register in the cp0
 // See datasheet p152
 // TODO better name?
+#[derive(Debug)]
 enum RegConfigEp
 {
     D,
@@ -102,6 +136,7 @@ impl Default for RegConfigEp
 }
 
 // TODO better name?
+#[derive(Debug)]
 enum RegConfigBe
 {
     LittleEndian,
@@ -116,7 +151,7 @@ impl Default for RegConfigBe
     }
 }
 
-#[derive(Default)]
+#[derive(Debug, Default)]
 struct RegConfig
 {
     // 'areas' of cp0 registers are split out to separate structures for ergonomics
@@ -134,7 +169,7 @@ impl RegConfig
     }
 }
 
-#[derive(Default)]
+#[derive(Debug, Default)]
 struct Cp0
 {
     // cp0 registers (see datasheet: p46)

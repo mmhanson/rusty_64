@@ -22,7 +22,9 @@ fn main()
 
     let mut n64 = n64::N64::new(pif_rom);
     n64.power_on_reset();
-    n64.run();
+    println!("After: {:#?}", &n64);
+    n64.run_instruction();
+    println!("After: {:#?}", &n64);
 }
 
 fn read_bin<P: AsRef<Path>>(path: P) -> Vec<u8>
