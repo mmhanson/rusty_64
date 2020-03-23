@@ -1,9 +1,9 @@
+use super::byteorder::{BigEndian, ByteOrder};
 use std::fmt;
 
 const PIF_ROM_SIZE: usize = 2048;
 const RAM_SIZE: usize = 4 * 1024 * 1024;
 
-#[derive(Debug)]
 pub struct Interconnect
 {
     pif_rom: Vec<u8>,
@@ -31,12 +31,15 @@ impl Interconnect
         {
             let rel_addr = addr - 0x1fc0_0000;
 
+            /*
             // TODO verify endianness
             // TODO use byteorder crate?
             ((self.pif_rom[rel_addr as usize] as u32) << 24) |
             ((self.pif_rom[(rel_addr + 1) as usize] as u32) << 16) |
             ((self.pif_rom[(rel_addr + 2) as usize] as u32) << 8) |
             (self.pif_rom[(rel_addr + 3) as usize] as u32)
+            */
+            BigEndian::read_u32(&self.pif_rom[rel_addr as usize..])
         }
         else
         {

@@ -3,6 +3,7 @@
 // note: in comments, 'datasheet' refers to the NEC VR4300 user's manual
 //   included in the documentation in this repository
 
+extern crate byteorder;
 
 mod cpu;
 mod n64;
