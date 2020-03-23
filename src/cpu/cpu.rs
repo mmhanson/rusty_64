@@ -1,4 +1,5 @@
-use super::interconnect;
+use super::super::interconnect;
+use super::cp0::cp0;
 
 const NUM_GPR: usize = 32; // number of general purpose registers
 
@@ -16,7 +17,7 @@ pub struct Cpu
     reg_fcr0: u32,
     reg_fcr31: u32,
 
-    cp0: Cp0, // cpu contains cp0
+    cp0: cp0::Cp0, // cpu contains cp0
     interconnect: interconnect::Interconnect,
 }
 
@@ -34,7 +35,7 @@ impl Cpu
             reg_llbit: false,
             reg_fcr0: 0,
             reg_fcr31: 0,
-            cp0: Cp0::default(),
+            cp0: cp0::Cp0::default(),
             interconnect: interconnect,
         }
     }
@@ -61,17 +62,22 @@ impl Cpu
         let instruction = self.read_word(self.reg_pc);
 
         let opcode = (instruction >> 26) & 0b111111;
+        let rt = (instruction >> 16) & 0b11111; // target register index
         match opcode
         {
             0b001111 =>
             {
                 // LUI
-                println!("We got LUI!");
                 let imm = instruction & 0xffff;
-                let rt = (instruction >> 16) & 0x11111; // index
-                // TODO check if in 32 or 64b mode for sign extension
-                // NOTE 32b mode is assumed below
+                // TODO sign extend upper 32 bits
                 self.write_reg_gpr(rt as usize, (imm << 16) as u64);
+            }
+            0b010000 =>
+            {
+                // MTC0
+                let rd = (instruction >> 11) & 0b11111;
+                let data = self.read_reg_gpr(rt as usize);
+                self.cp0.write_reg(rd, data);
             }
             _ =>
             {
@@ -114,73 +120,13 @@ impl Cpu
             self.reg_gpr[index] = value;
         }
     }
-}
 
-// The 'EP' area of the config register in the cp0
-// See datasheet p152
-// TODO better name?
-#[derive(Debug)]
-enum RegConfigEp
-{
-    D,
-    DxxDxx,
-    RFU,
-}
-
-impl Default for RegConfigEp
-{
-    fn default() -> RegConfigEp
+    fn read_reg_gpr(&self, index: usize) -> u64
     {
-        RegConfigEp::D
-    }
-}
-
-// TODO better name?
-#[derive(Debug)]
-enum RegConfigBe
-{
-    LittleEndian,
-    BigEndian,
-}
-
-impl Default for RegConfigBe
-{
-    fn default() -> RegConfigBe
-    {
-        RegConfigBe::BigEndian
-    }
-}
-
-#[derive(Debug, Default)]
-struct RegConfig
-{
-    // 'areas' of cp0 registers are split out to separate structures for ergonomics
-    reg_config_ep: RegConfigEp,
-    reg_config_be: RegConfigBe,
-}
-
-impl RegConfig
-{
-    fn power_on_reset(&mut self)
-    {
-        // see datasheet: 9.2.1 p249
-        self.reg_config_ep = RegConfigEp::D;
-        self.reg_config_be = RegConfigBe::BigEndian;
-    }
-}
-
-#[derive(Debug, Default)]
-struct Cp0
-{
-    // cp0 registers (see datasheet: p46)
-    reg_config: RegConfig,
-}
-
-impl Cp0
-{
-    // also 'hard_reset'
-    fn power_on_reset(&mut self)
-    {
-        self.reg_config.power_on_reset();
+        match index
+        {
+            0 => 0,
+            _ => self.reg_gpr[index]
+        }
     }
 }
