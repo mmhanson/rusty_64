@@ -6,6 +6,7 @@ pub struct Cp0
 {
     // cp0 registers (see datasheet: p46)
     reg_config: reg_config::RegConfig,
+    reg_status: reg_status::RegStatus,
 }
 
 impl Cp0
@@ -32,5 +33,6 @@ impl Cp0
     fn write_status_reg(&mut self, data: u64)
     {
         // see datasheet p166 for details
+        self.reg_status.write(data as u32);
     }
 }
