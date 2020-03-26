@@ -76,8 +76,8 @@ impl Cpu
             0b001111 =>
             {
                 // LUI
-                // TODO sign extend upper 32 bits
-                self.write_reg_gpr(rt as usize, (imm << 16) as u64);
+                let value = ((imm << 16) as i32) as u64); // sign extend upper 32 bits
+                self.write_reg_gpr(rt as usize, value);
             }
             0b010000 =>
             {
@@ -86,10 +86,22 @@ impl Cpu
                 let data = self.read_reg_gpr(rt as usize);
                 self.cp0.write_reg(rd, data);
             }
-            _ =>
+            0b100011 =>
             {
-                panic!("Unrecognized instruction: {:#x}", instruction)
+                // LW
+                let base = rs;
+                let offset = imm;
+                
+                // sign extend upper 32 bits
+                let signed_offset = ((offset as i16) as u64); // TODO refactor
+                let virt_addr =
+                    signed_offset + self.read_reg_gpr(base as usize);
+                let word = self.read_word(virt_addr)
+                let mem = (word as i32) as u64;
+
+                self.write_reg_gpr(rt as usize, mem);
             }
+            _ => panic!("Unrecognized instruction: {:#x}", instruction)
         }
 
         self.reg_pc += 4;

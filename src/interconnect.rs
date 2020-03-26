@@ -43,7 +43,7 @@ impl Interconnect
         }
         else
         {
-            panic!("Unrecognized address: {:#x}", addr);
+            panic!("Unrecognized physical address: {:#x}", addr);
         }
     }
 }
