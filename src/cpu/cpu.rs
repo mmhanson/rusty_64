@@ -88,7 +88,7 @@ impl Cpu
             }
             _ =>
             {
-                panic!("Unrecognized opword: {:#x}", instruction)
+                panic!("Unrecognized instruction: {:#x}", instruction)
             }
         }
 

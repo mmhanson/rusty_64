@@ -24,15 +24,13 @@ impl Cp0
             12 =>
             {
                 // status register (see datasheet p166)
-                self.write_status_reg(data);
-            }
-            _ => panic!("Unrecognized cp0 reg write: {:#?}, {:#?}", index, data)
+                self.reg_status = (data as u32).into();
+            },
+            16 =>
+            {
+                self.reg_config = (data as u32).into();
+            },
+            _ => panic!("Unrecognized cp0 reg write: {}, {:#x}", index, data)
         }
-    }
-
-    fn write_status_reg(&mut self, data: u64)
-    {
-        // see datasheet p166 for details
-        self.reg_status.write(data as u32);
     }
 }
