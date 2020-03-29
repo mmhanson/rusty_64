@@ -8,3 +8,5 @@ edition = "2018"
 
 [dependencies]
 byteorder = "1.3.4"
+num = "0.1.30"
+enum_primitive = "0.1.0"
