@@ -62,8 +62,20 @@ impl Cpu
 
     pub fn run_instruction(&mut self)
     {
-        let instr = Instruction(self.read_word(self.reg_pc));
+        let instr = self.read_instruction(self.reg_pc);
 
+        println!("reg_pc {:#018X}: {:?}", self.reg_pc, instr);
+        self.reg_pc += 4;
+        self.execute_instruction(instr);
+    }
+
+    fn read_instruction(&self, addr: u64) -> Instruction
+    {
+        return Instruction(self.read_word(addr));
+    }
+
+    fn execute_instruction(&mut self, instr: Instruction)
+    {
         match instr.opcode()
         {
             Andi =>
@@ -71,39 +83,42 @@ impl Cpu
                 // ANDI
                 let res = self.read_reg_gpr(instr.rs() as usize) & (instr.imm() as u64);
                 self.write_reg_gpr(instr.rt() as usize, res);
-            }
+            },
             Ori =>
             {
                 // ORI
                 let res = self.read_reg_gpr(instr.rs() as usize) | (instr.imm() as u64);
                 self.write_reg_gpr(instr.rt() as usize, res);
-            }
+            },
             Lui =>
             {
                 // LUI
                 let value = (((instr.imm() << 16) as i32) as u64); // sign extend upper 32 bits
                 self.write_reg_gpr(instr.rt() as usize, value);
-            }
+            },
             Mtc0 =>
             {
                 // MTC0
                 let data = self.read_reg_gpr(instr.rt() as usize);
                 self.cp0.write_reg(instr.rd(), data);
-            }
+            },
             Beql =>
             {
                 // BEQL (and BEQZL)
                 if (self.read_reg_gpr(instr.rs() as usize) == self.read_reg_gpr(instr.rt() as usize))
                 {
+                    let old_pc = self.reg_pc;
+
                     let sign_extended_offset =
                         ((instr.offset() as i16) as u64).wrapping_shl(2);
                     self.reg_pc = self.reg_pc.wrapping_add(sign_extended_offset);
 
                     // TODO split into own fxn
                     // TODO refactor delay slot stuff, this could stack overflow
-                    self.run_instruction();
+                    let delay_slot_instr = self.read_instruction(old_pc); // note old pc already incremented above
+                    self.execute_instruction(delay_slot_instr); // execute branch delay slot
                 }
-            }
+            },
             Lw =>
             {
                 // LW
@@ -117,10 +132,8 @@ impl Cpu
                 let mem = (word as i32) as u64;
 
                 self.write_reg_gpr(instr.rt() as usize, mem);
-            }
+            },
         }
-
-        self.reg_pc += 4;
     }
 
     // take an address (64b) and return a word (32b)

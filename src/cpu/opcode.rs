@@ -1,8 +1,6 @@
-extern crate num;
-use num::FromPrimitive;
-
 enum_from_primitive!
 {
+    #[derive(Debug)]
     pub enum Opcode
     {
         Andi = 0b001100,

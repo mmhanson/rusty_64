@@ -7,6 +7,7 @@ impl Rsp
     pub fn read_status_reg(&self) -> u32
     {
         // TODO actually impl
-        0
+        // start 'unhalted' so rsp starts executing code right away
+        1
     }
 }

@@ -1,3 +1,5 @@
+use std::fmt;
+
 use super::opcode::Opcode;
 
 pub struct Instruction(pub u32);
@@ -43,5 +45,13 @@ impl Instruction
     pub fn offset(&self) -> u32
     {
         self.imm()
+    }
+}
+
+impl fmt::Debug for Instruction
+{
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result
+    {
+        write!(f, "{:?}", self.opcode())
     }
 }
